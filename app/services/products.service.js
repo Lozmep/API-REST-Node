@@ -33,7 +33,6 @@ class ProductsService {
   }
 
   async findOne(id) {
-    getTotal()
     return this.products.find(product => product.id === id)
   }
 
