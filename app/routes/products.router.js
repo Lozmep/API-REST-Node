@@ -1,70 +1,56 @@
 const express = require('express')
-const faker = require('faker')
 
 const router = express.Router()
+const ProductsService = require('../services/products.service')
 
-router.get('/', (req,res) => {
-  const limit = req.query.size || 10
-  const products = []
-  for (let i = 0; i < limit; i++) {
-    products.push({
-      name: faker.commerce.productName(),
-      price: parseInt(faker.commerce.price(),10),
-      image: faker.image.imageUrl()
-    })
-  }
-  res.json(products)
+const productsService = new ProductsService()
+
+router.get('/', async (req,res) => {
+  const products = await productsService.find()
+  res.status(200).send(products)
 })
 
-router.get('/filter', (req,res) => {
+router.get('/filter', async (req,res) => {
   res.send('Filter')
 })
 
-router.post('/', (req,res) => {
+router.post('/', async (req,res) => {
   const { body } = req
-  res.status(201).json({
-    message: 'Created',
-    data: body
+  const product = await productsService.create(body)
+  res.status(201).send({
+    product
   })
 })
 
-router.patch('/:id', (req,res) => {
-  const { id } = req.params
-  const { body } = req
-  res.json({
-    message: 'Updated',
-    data: body,
-    id
-  })
-})
-
-router.get('/:id', (req,res) => {
-  const { id } = req.params
-  if (id === "999") {
-    return res.status(404).send({
-      message: 'Not Found'
-    })
+router.patch('/:id', async (req,res,next) => {
+  try {
+    const { id } = req.params
+    const { body } = req
+    const product = await productsService.update(id,body)
+    res.status(200).send(product)
+  } catch(err) {
+    next(err)
   }
-  if (id==='1') {
-    return res.status(200).send({
-      id,
-      name: 'Producto 1',
-      price: '1000'
-    },)
-  }
-  res.json({
-    id,
-    name: 'Producto 2',
-    price: '2000'
-  },)
+
 })
 
-router.delete('/:id', (req,res) => {
+router.get('/:id', async (req,res,next) => {
+  try {
+      const { id } = req.params
+    const product = await productsService.findOne(id)
+    if (!product) { res.status(400).send({message: 'Not Found'}) }
+    res.status(200).send(product)
+  } catch(err) {
+    next(err)
+  }
+
+})
+
+router.delete('/:id', async (req,res) => {
   const { id } = req.params
-  res.status(200).send({
-    message: 'Deleted',
-    id
-  })
+  const message = await productsService.delete(id)
+  if (!message) { return res.status(404).send({ message: 'Not foundasync ' }) }
+  res.status(200).send(message)
 })
 
 module.exports = router
